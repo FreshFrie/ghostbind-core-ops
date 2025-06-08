@@ -4,24 +4,36 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
+    steps:
+      # 1️⃣  Checkout over SSH using the key stored in CI_DEPLOY_KEY
+      - uses: actions/checkout@v4
+        with:
+          ssh-key: ${{ secrets.CI_DEPLOY_KEY }}
+
+      # 2️⃣  Python runtime
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
+      # 3️⃣  Optional dependencies (ignored if requirements.txt absent)
       - name: Install deps
         run: |
-          pip install -q -r requirements.txt || true    # ignore if file absent
+          if [ -f requirements.txt ]; then
+            pip install -qr requirements.txt
+          else
+            echo "no requirements.txt — skipping pip install"
+          fi
 
+      # 4️⃣  Hinge self-test — no SSH needed, so no ssh-add here
       - name: Hinge self-test (DRY_RUN)
         env:
           GB_DRY_RUN: "1"
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
-          eval "$(ssh-agent -s)"
-          echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
-          # if hinge.py isn’t yet in this repo, the next line just exits 0
-          python hinge.py --selftest || true
+          echo "Running hinge self-test ..."
+          if [ -f hinge.py ]; then
+            python hinge.py --selftest
+          else
+            echo "hinge.py not present — skipping."
+          fi
