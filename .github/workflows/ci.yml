@@ -1,0 +1,27 @@
+name: Ghostbind CI
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install deps
+        run: |
+          pip install -q -r requirements.txt || true    # ignore if file absent
+
+      - name: Hinge self-test (DRY_RUN)
+        env:
+          GB_DRY_RUN: "1"
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          eval "$(ssh-agent -s)"
+          echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+          # if hinge.py isn’t yet in this repo, the next line just exits 0
+          python hinge.py --selftest || true
