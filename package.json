@@ -1,0 +1,1 @@
+{ "name": "ghostbind-core-ops", "version": "0.1.0", "scripts": { "lint": "echo ok", "test": "echo ok" } }

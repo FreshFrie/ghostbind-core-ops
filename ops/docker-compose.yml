@@ -1,0 +1,18 @@
+version: "3.8"
+services:
+  loki:
+    image: grafana/loki:2.9.0
+    command: -config.file=/etc/loki/local-config.yaml
+    ports: ["3100:3100"]
+  grafana:
+    image: grafana/grafana:10.3.0
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=changeme
+    ports: ["3000:3000"]
+    depends_on: [loki]
+  promtail:
+    image: grafana/promtail:2.9.0
+    command: -config.file=/etc/promtail/docker-config.yaml
+    volumes:
+      - /var/log:/var/log
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
